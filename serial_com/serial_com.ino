@@ -1,36 +1,81 @@
 #include <dummy.h>
 
 // Pin connected to X0 on ESP32
-const int X0_PIN = 0; // Change this to the appropriate pin number
-bool prev = LOW;
+const int X0_PIN = 26; // Change this to the appropriate pin number for X0
+// Pin connected to X1 on ESP32
+const int X1_PIN = 27; // Change this to the appropriate pin number for X1
+// Pin connected to X2 on ESP32
+const int X2_PIN = 32; // Change this to the appropriate pin number for X2
+// Pin connected to X3 on ESP32
+const int X3_PIN = 33; // Change this to the appropriate pin number for X3
+// Pin connected to X4 on ESP32
+const int X4_PIN = 34; // Change this to the appropriate pin number for X4
+// Pin connected to X5 on ESP32
+const int X5_PIN = 35; // Change this to the appropriate pin number for X5
+// Pin connected to X6 on ESP32
+const int X6_PIN = 12; // Change this to the appropriate pin number for X6
+// Pin connected to X7 on ESP32
+const int X7_PIN = 14; // Change this to the appropriate pin number for X7
+// Pin connected to X8 on ESP32
+
+
+bool prev[8] = {LOW}; // Array to store previous state of each pin
+bool xOn[8] = {false}; // Array to track state of each pin
 int x = 0; // Initialize x to 0
 
 void setup() {
   // Initialize serial communication
   Serial.begin(9600);
   
-  // Set X0 pin as input
+  // Set all X pins as input
   pinMode(X0_PIN, INPUT);
+  pinMode(X1_PIN, INPUT);
+  pinMode(X2_PIN, INPUT);
+  pinMode(X3_PIN, INPUT);
+  pinMode(X4_PIN, INPUT);
+  pinMode(X5_PIN, INPUT);
+  pinMode(X6_PIN, INPUT);
+  pinMode(X7_PIN, INPUT);
 }
 
 void loop() {
-  // Read the state of X0 pin
-  int x0State = digitalRead(X0_PIN);
-  
-  // Check if X0 is set
-  if (prev == LOW && x0State == HIGH) {
-    // Increment x and print to Serial Monitor
-    x++;
-    Serial.println("OKAY\r\n");
+  // Array of pin numbers
+  const int pins[8] = {X0_PIN, X1_PIN, X2_PIN, X3_PIN, X4_PIN, X5_PIN, X6_PIN, X7_PIN};
+
+  // Loop through each pin
+  for (int i = 0; i < 8; i++) {
+    // Read the state of the pin
+    int xState = digitalRead(pins[i]);
+
+    // Check if pin is set
+    if (prev[i] == LOW && xState == HIGH) {
+      // If pin was off before, print pin on
+      if (!xOn[i]) {
+        Serial.print("x");
+        Serial.print(i);
+        Serial.println(" on");
+        xOn[i] = true; // Update pin state
+      }
+      // Increment x
+      x++;
+    }
+
+    // Check if pin is off
+    if (prev[i] == HIGH && xState == LOW) {
+      // If pin was on before, print pin off
+      if (xOn[i]) {
+        Serial.print("x");
+        Serial.print(i);
+        Serial.println(" off");
+        xOn[i] = false; // Update pin state
+      }
+      // Increment x
+      x++;
+    }
+
+    prev[i] = xState;
   }
 
-  if (prev == HIGH && x0State == LOW){
-    // Increment x and print to Serial Monitor
-    x++;
-    Serial.println("not okay \r\n");
-  }
-  prev = x0State;
-  
   // Add a small delay to avoid flooding the Serial Monitor
   //delay(1000);
 }
