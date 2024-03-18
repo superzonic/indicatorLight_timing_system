@@ -57,22 +57,25 @@ class MainApp:
 
 class Connector:
     def __init__(self):
-        self.start_time = None
+        self.start_times = [None] * 8
 
     def screen(self, signal):
-        if signal == "x0 on" and self.start_time is None:
-            self.start_time = datetime.now()
-            print(f"Time started: {self.start_time}")
-            app.update_button_text_color(0, True)
-            write_start_time_to_database(self.start_time)
-        elif signal == "x0 off" and self.start_time is not None:
-            end_time = datetime.now()
-            print(f"Time stopped: {end_time}")
-            app.update_button_text_color(0, False)
-            write_stop_time_to_database(self.start_time, end_time)
-            self.start_time = None
-        else:
-            print(signal)
+        try:
+            pin, state = signal.split()
+            pin_number = int(pin[1])
+            if state == "on" and self.start_times[pin_number] is None:
+                self.start_times[pin_number] = datetime.now()
+                print(f"Time started for X{pin_number}: {self.start_times[pin_number]}")
+                app.update_button_text_color(pin_number, True)
+                write_start_time_to_database(pin_number, self.start_times[pin_number])
+            elif state == "off" and self.start_times[pin_number] is not None:
+                end_time = datetime.now()
+                print(f"Time stopped for X{pin_number}: {end_time}")
+                app.update_button_text_color(pin_number, False)
+                write_stop_time_to_database(pin_number, self.start_times[pin_number], end_time)
+                self.start_times[pin_number] = None
+        except Exception as e:
+            print(f"Error processing signal: {e}")
 
 def arduino_read(serialInst, connector):
     while True:
@@ -81,17 +84,16 @@ def arduino_read(serialInst, connector):
                 signal = serialInst.readline().decode('utf-8').strip()
                 connector.screen(signal)
             except UnicodeDecodeError as e:
-                print(f"UnicodeDecodeError: {e}")
-                # Handle the error (e.g., ignore or replace invalid characters)
+                pass
 
-def write_start_time_to_database(start_time):
+def write_start_time_to_database(pin_number, start_time):
     try:
         # Connect to SQLite database
         conn = sqlite3.connect('line_data.db')
         c = conn.cursor()
 
-        # Insert start time into the line1 table
-        c.execute("INSERT INTO line1 (Date, Start_time) VALUES (?, ?)",
+        # Insert start time into the line table
+        c.execute(f"INSERT INTO line{pin_number + 1} (Date, Start_time) VALUES (?, ?)",
                   (start_time.date(), start_time.time().strftime('%H:%M:%S')))
 
         # Commit changes and close connection
@@ -101,14 +103,14 @@ def write_start_time_to_database(start_time):
     except Exception as e:
         print(f"Error writing start time to database: {e}")
 
-def write_stop_time_to_database(start_time, end_time):
+def write_stop_time_to_database(pin_number, start_time, end_time):
     try:
         # Connect to SQLite database
         conn = sqlite3.connect('line_data.db')
         c = conn.cursor()
 
-        # Update stop time in the line1 table
-        c.execute("UPDATE line1 SET Stop_time = ? WHERE Start_time = ?",
+        # Update stop time in the line table
+        c.execute(f"UPDATE line{pin_number + 1} SET Stop_time = ? WHERE Start_time = ?",
                   (end_time.time().strftime('%H:%M:%S'), start_time.time().strftime('%H:%M:%S')))
 
         # Commit changes and close connection
