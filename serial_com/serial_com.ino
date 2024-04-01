@@ -13,9 +13,9 @@ const int X4_PIN = 34; // Change this to the appropriate pin number for X4
 // Pin connected to X5 on ESP32
 const int X5_PIN = 35; // Change this to the appropriate pin number for X5
 // Pin connected to X6 on ESP32
-const int X6_PIN = 12; // Change this to the appropriate pin number for X6
+const int X6_PIN = 36; // Change this to the appropriate pin number for X6
 // Pin connected to X7 on ESP32
-const int X7_PIN = 14; // Change this to the appropriate pin number for X7
+const int X7_PIN = 39; // Change this to the appropriate pin number for X7
 // Pin connected to X8 on ESP32
 
 

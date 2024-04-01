@@ -8,7 +8,7 @@ import sqlite3
 class MainApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Indicator lighting system")
+        self.root.title("Andon system")
 
         # User interface
         self.create_menu_bar()
@@ -27,7 +27,7 @@ class MainApp:
         top_image_frame = tk.Frame(self.root)
         top_image_frame.pack(padx=5, pady=2, fill="x")
 
-        label = tk.Label(top_image_frame, text="Indicator lighting system",
+        label = tk.Label(top_image_frame, text="Andon system",
                          font=("Arial", 40, "bold"), fg="#48adcf")
         label.pack(padx=1, pady=15)
 
