@@ -40,6 +40,7 @@ class MainApp:
             button = tk.Button(button_frame, width=13, height=5, font=("Helvetica", 29),
                                command=lambda idx=i: self.toggle_button(idx))
             button.grid(row=0 if i < 4 else 1, column=i % 4, padx=1, pady=1)
+            button.config(state="disabled")
             self.buttons.append(button)
             self.update_button_text_color(i)
 
@@ -51,9 +52,9 @@ class MainApp:
         if state is None:
             state = self.button_states[index]
         if state:
-            self.buttons[index].config(text=f"LINE {index + 1}\n\nNEED\n ATTENTION", bg="red")
+            self.buttons[index].config(text=f"LINE {index + 1}\n\nNEED\n ATTENTION", bg="red" , disabledforeground= "black")
         else:
-            self.buttons[index].config(text=f"LINE {index + 1}\n\nRUNNING\n WELL", bg="green")
+            self.buttons[index].config(text=f"LINE {index + 1}\n\nRUNNING\n WELL", bg="green" , disabledforeground="black")
 
 class Connector:
     def __init__(self):
@@ -126,10 +127,11 @@ if __name__ == "__main__":
     app = MainApp(root)
 
     # Initialize serial communication
-    ports = serial.tools.list_ports.comports()
+    with open('port.txt', 'r') as file:
+        port = file.read().strip()
     serialInst = serial.Serial()
     serialInst.baudrate = 9600
-    serialInst.port = "COM6"
+    serialInst.port = port
     serialInst.open()
 
     # Create Connector instance
