@@ -13,7 +13,9 @@ class count_time:
         minutes = (self.seconds % 3600) // 60
         seconds = self.seconds % 60
 
-        return hours, minutes, seconds
+        #return hours, minutes, seconds
+        # Return the time in hh:mm:ss format
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def count_up(self):
         self.seconds +=1
@@ -33,20 +35,23 @@ class count_time:
         total_time = 0
         # Calculate total time
         for start_time, stop_time in entries:
-            start = datetime.strptime(start_time, '%H:%M:%S')
-            stop = datetime.strptime(stop_time, '%H:%M:%S')
-            duration = stop - start
-            total_time += duration.seconds
+            if start_time is not None and stop_time is not None:
+                start = datetime.strptime(start_time, '%H:%M:%S')
+                stop = datetime.strptime(stop_time, '%H:%M:%S')
+                duration = stop - start
+                total_time += duration.seconds
 
         # Convert total seconds to hours, minutes, and seconds
         total_hours = total_time // 3600
         total_minutes = (total_time % 3600) // 60
-        total_seconds = total_time
+        total_seconds =  (total_time % 3600) % 60
 
         # Close the connection
         conn.close()
 
-        return total_hours, total_minutes, total_seconds
+       # return total_hours, total_minutes, total_seconds
+        return f"{total_hours:02d}:{total_minutes:02d}:{total_seconds:02d}"
+
 
 
 
