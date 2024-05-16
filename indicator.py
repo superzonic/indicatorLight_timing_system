@@ -4,11 +4,13 @@ import serial
 import threading
 from datetime import datetime
 import sqlite3
+import counting
 
 class MainApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Andon system")
+        self.cancel_ids = [None] * 8  # Store ids for cancelling update
 
         # User interface
         self.create_menu_bar()
@@ -52,9 +54,35 @@ class MainApp:
         if state is None:
             state = self.button_states[index]
         if state:
-            self.buttons[index].config(text=f"LINE {index + 1}\n\nNEED\n ATTENTION", bg="red" , disabledforeground= "black")
+            line_count = counting.count_time(table_name="Line" + str(index))
+            self.buttons[index].config(text=f"LINE {index + 1}\n\nNEED\n ATTENTION\n", bg="red",
+                                       disabledforeground="black")
+            if index in (0, 1):
+                self.cancel_task(index)
+                self.counting_text_edit(index, line_count)  # Call counting_text_edit directly
+            else:
+                self.cancel_ids[index] = self.buttons[index].after(1000, lambda idx=index,
+                                                                                lc=line_count: self.counting_text_edit(
+                    idx, lc))
         else:
-            self.buttons[index].config(text=f"LINE {index + 1}\n\nRUNNING\n WELL", bg="green" , disabledforeground="black")
+            self.cancel_task(index)
+            self.buttons[index].config(text=f"LINE {index + 1}\n\nRUNNING\n WELL", bg="green",
+                                       disabledforeground="black")
+
+    def cancel_task(self, index):
+        if self.cancel_ids[index] is not None:
+            self.root.after_cancel(self.cancel_ids[index])
+            self.cancel_ids[index] = None
+
+    def counting_text_edit(self, index, line_count):
+        line_count.count_up()
+        self.time_value = line_count.convert_seconds()
+        self.buttons[index].config(text=f"LINE {index + 1}\n\nNEED\n ATTENTION\n" + str(self.time_value),
+                                   bg="red", disabledforeground="black")
+        self.cancel_ids[index] = self.buttons[index].after(1000,
+                                                           lambda idx=index, lc=line_count: self.counting_text_edit(idx,
+                                                                                                                    lc))
+
 
 class Connector:
     def __init__(self):
