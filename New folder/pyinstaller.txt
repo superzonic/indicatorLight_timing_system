@@ -1,0 +1,1 @@
+pyinstaller --icon=icon.png indicator.py

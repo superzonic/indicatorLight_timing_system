@@ -55,8 +55,8 @@ class MainApp:
         top_image_frame.pack(padx=5, pady=2, fill="x")
 
         label = tk.Label(top_image_frame, text="Line Status",
-                         font=("Arial", 40, "bold"), fg="#48adcf")
-        label.pack(padx=1, pady=15)
+                         font=("Arial", 35, "bold"), fg="#48adcf")
+        label.pack(padx=1, pady=10)
 
     def create_button_row(self):
         # Create a frame for buttons

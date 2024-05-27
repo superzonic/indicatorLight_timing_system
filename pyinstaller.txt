@@ -1,0 +1,2 @@
+pyinstaller --icon=icon.png --noconsole indicator.py
+
