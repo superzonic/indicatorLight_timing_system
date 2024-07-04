@@ -135,23 +135,21 @@ class Connector:
         try:
             pin, state = signal.split()
             pin_number = int(pin[1])
-            if state == "on" and self.start_times[pin_number] is None:
-                self.start_times[pin_number] = datetime.now()
-                print(f"Time started for X{pin_number}: {self.start_times[pin_number]}")
-                self.main_app.update_button_text_color(pin_number, True)
-                write_start_time_to_database(pin_number, self.start_times[pin_number])
-            elif state == "off" and self.start_times[pin_number] is not None:
-                end_time = datetime.now()
-                print(f"Time stopped for X{pin_number}: {end_time}")
-                self.main_app.update_button_text_color(pin_number, False)
-                # Pass the update_downtime_label method as the callback function
-                write_stop_time_to_database(pin_number, self.start_times[pin_number], end_time, app)
-
-                self.start_times[pin_number] = None
+            if state == "on":
+                if self.start_times[pin_number] is None:
+                    self.start_times[pin_number] = datetime.now()
+                    print(f"Time started for X{pin_number}: {self.start_times[pin_number]}")
+                    self.main_app.update_button_text_color(pin_number, True)
+                    write_start_time_to_database(pin_number, self.start_times[pin_number])
+            elif state == "off":
+                if self.start_times[pin_number] is not None:
+                    end_time = datetime.now()
+                    print(f"Time stopped for X{pin_number}: {end_time}")
+                    self.main_app.update_button_text_color(pin_number, False)
+                    write_stop_time_to_database(pin_number, self.start_times[pin_number], end_time, self.main_app)
+                    self.start_times[pin_number] = None
         except Exception as e:
             print(f"Error processing signal: {e}")
-
-
 
 def arduino_read(serialInst, connector):
     while True:
@@ -164,15 +162,10 @@ def arduino_read(serialInst, connector):
 
 def write_start_time_to_database(pin_number, start_time):
     try:
-        # Connect to SQLite database
         conn = sqlite3.connect('line_data.db')
         c = conn.cursor()
-
-        # Insert start time into the line table
         c.execute(f"INSERT INTO line{pin_number + 1} (Date, Start_time) VALUES (?, ?)",
                   (start_time.date(), start_time.time().strftime('%H:%M:%S')))
-
-        # Commit changes and close connection
         conn.commit()
         conn.close()
         print("Start time written to database successfully")
@@ -181,25 +174,16 @@ def write_start_time_to_database(pin_number, start_time):
 
 def write_stop_time_to_database(pin_number, start_time, end_time, main_app_instance):
     try:
-        # Connect to SQLite database
         conn = sqlite3.connect('line_data.db')
         c = conn.cursor()
-
-        # Update stop time in the line table
         c.execute(f"UPDATE line{pin_number + 1} SET Stop_time = ? WHERE Start_time = ?",
                   (end_time.time().strftime('%H:%M:%S'), start_time.time().strftime('%H:%M:%S')))
-
-        # Commit changes and close connection
         conn.commit()
         conn.close()
         print("Stop time written to database successfully")
-
-        # Call the update_downtime_label method on the main_app_instance
         main_app_instance.update_downtime_label(pin_number + 1)
-
     except Exception as e:
         print(f"Error writing stop time to database: {e}")
-
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -207,8 +191,6 @@ if __name__ == "__main__":
     root.iconbitmap("icon.ico")
     app = MainApp(root)
 
-
-    # Initialize serial communication
     with open('port.txt', 'r') as file:
         port = file.read().strip()
     serialInst = serial.Serial()
@@ -216,10 +198,8 @@ if __name__ == "__main__":
     serialInst.port = port
     serialInst.open()
 
-    # Create Connector instance
     connector = Connector(app)
 
-    # Start a separate thread for reading serial data
     threading.Thread(target=arduino_read, args=(serialInst, connector), daemon=True).start()
 
     root.mainloop()

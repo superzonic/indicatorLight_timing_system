@@ -16,12 +16,8 @@ const int X5_PIN = 35; // Change this to the appropriate pin number for X5
 const int X6_PIN = 36; // Change this to the appropriate pin number for X6
 // Pin connected to X7 on ESP32
 const int X7_PIN = 39; // Change this to the appropriate pin number for X7
-// Pin connected to X8 on ESP32
-
 
 bool prev[8] = {LOW}; // Array to store previous state of each pin
-bool xOn[8] = {false}; // Array to track state of each pin
-int x = 0; // Initialize x to 0
 
 void setup() {
   // Initialize serial communication
@@ -48,34 +44,19 @@ void loop() {
     int xState = digitalRead(pins[i]);
 
     // Check if pin is set
-    if (prev[i] == LOW && xState == HIGH) {
-      // If pin was off before, print pin on
-      if (!xOn[i]) {
-        Serial.print("x");
-        Serial.print(i);
-        Serial.println(" on");
-        xOn[i] = true; // Update pin state
-      }
-      // Increment x
-      x++;
-    }
-
-    // Check if pin is off
-    if (prev[i] == HIGH && xState == LOW) {
-      // If pin was on before, print pin off
-      if (xOn[i]) {
-        Serial.print("x");
-        Serial.print(i);
-        Serial.println(" off");
-        xOn[i] = false; // Update pin state
-      }
-      // Increment x
-      x++;
+    if (xState == HIGH) {
+      Serial.print("x");
+      Serial.print(i);
+      Serial.println(" on");
+    } else {
+      Serial.print("x");
+      Serial.print(i);
+      Serial.println(" off");
     }
 
     prev[i] = xState;
   }
 
   // Add a small delay to avoid flooding the Serial Monitor
-  //delay(1000);
+  delay(1000);
 }
