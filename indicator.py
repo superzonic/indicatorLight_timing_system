@@ -87,33 +87,38 @@ class MainApp:
             state = self.button_states[index]
         if state:
             # Button is in True state
-            line_count = counting.count_time(table_name="Line" + str(index))
+            line_count = counting.count_time(table_name="Line" + str(index + 1))  # Ensure the table name matches
             self.buttons[index].config(text=f"LINE {index + 1}\n\nNEED\n ATTENTION\n", bg="red",
                                        disabledforeground="black")
             if index in (0, 1):
                 self.cancel_task(index)
                 self.counting_text_edit(index, line_count)  # Call counting_text_edit directly
             else:
-                self.cancel_ids[index] = self.buttons[index].after(1000, lambda idx=index,
-                                                                                lc=line_count: self.counting_text_edit(
-                    idx, lc))
+                self.cancel_ids[index] = self.buttons[index].after(1000, lambda idx=index, lc=line_count: self.counting_text_edit(idx, lc))
         else:
             # Button is in False state
+
             self.cancel_task(index)
-            self.buttons[index].config(text=f"LINE {index + 1}\n\nRUNNING\n WELL", bg="green",
+            line_count = counting.count_time(table_name="Line" + str(index + 1))  # Ensure the table name matches
+            total_downtime = self.get_total_downtime(index + 1)
+
+            self.buttons[index].config(text=f"LINE {index + 1}\nRUNNING\n WELL\n {total_downtime}", bg="green",
                                        disabledforeground="black")
+            def downtime_update():
+                self.cancel_task(index)
+                line_count = counting.count_time(table_name="Line" + str(index + 1))  # Ensure the table name matches
+                total_downtime = self.get_total_downtime(index + 1)
+                self.buttons[index].config(text=f"LINE {index + 1}\nRUNNING\n WELL\n {total_downtime}", bg="green",
+                                           disabledforeground="black")
+
+
+            self.buttons[index].after(5,downtime_update)
         # Update the button state
         self.button_states[index] = state
-        # Check if the state changed from True to False
-        if not state and self.button_states[index]:
-            # Recalculate total downtime for this line
-            down_time_line = counting.count_time(table_name="Line" + str(index))
-            downtime = down_time_line.get_total_time_for_current_date()
+        self.update_downtime_label(index + 1)
 
-            # Update the text of the corresponding bottom label
-            self.downtime_labels[index].config(text=f"Line {index + 1} Total Downtime: {downtime}")
-            print("reached")
-        self.update_downtime_label(index+1)
+
+
     def cancel_task(self, index):
         if self.cancel_ids[index] is not None:
             self.root.after_cancel(self.cancel_ids[index])
@@ -121,11 +126,10 @@ class MainApp:
     def counting_text_edit(self, index, line_count):
         line_count.count_up()
         self.time_value = line_count.convert_seconds()
-        self.buttons[index].config(text=f"LINE {index + 1}\nNEED\n ATTENTION\n" + str(self.time_value),
+        total_downtime = self.get_total_downtime(index + 1)
+        self.buttons[index].config(text=f"LINE {index + 1}\nNEED\n ATTENTION\n{self.time_value}\n {total_downtime}",
                                    bg="red", disabledforeground="black")
-        self.cancel_ids[index] = self.buttons[index].after(1000,
-                                                           lambda idx=index, lc=line_count: self.counting_text_edit(idx,
-                                                                                                                    lc))
+        self.cancel_ids[index] = self.buttons[index].after(1000, lambda idx=index, lc=line_count: self.counting_text_edit(idx, lc))
 class Connector:
     def __init__(self, main_app):
         self.start_times = [None] * 8
@@ -135,19 +139,17 @@ class Connector:
         try:
             pin, state = signal.split()
             pin_number = int(pin[1])
-            if state == "on":
-                if self.start_times[pin_number] is None:
-                    self.start_times[pin_number] = datetime.now()
-                    print(f"Time started for X{pin_number}: {self.start_times[pin_number]}")
-                    self.main_app.update_button_text_color(pin_number, True)
-                    write_start_time_to_database(pin_number, self.start_times[pin_number])
-            elif state == "off":
-                if self.start_times[pin_number] is not None:
-                    end_time = datetime.now()
-                    print(f"Time stopped for X{pin_number}: {end_time}")
-                    self.main_app.update_button_text_color(pin_number, False)
-                    write_stop_time_to_database(pin_number, self.start_times[pin_number], end_time, self.main_app)
-                    self.start_times[pin_number] = None
+            if state == "on" and self.start_times[pin_number] is None:
+                self.start_times[pin_number] = datetime.now()
+                print(f"Time started for X{pin_number}: {self.start_times[pin_number]}")
+                self.main_app.update_button_text_color(pin_number, True)
+                write_start_time_to_database(pin_number, self.start_times[pin_number])
+            elif state == "off" and self.start_times[pin_number] is not None:
+                end_time = datetime.now()
+                print(f"Time stopped for X{pin_number}: {end_time}")
+                self.main_app.update_button_text_color(pin_number, False)
+                write_stop_time_to_database(pin_number, self.start_times[pin_number], end_time, self.main_app)
+                self.start_times[pin_number] = None
         except Exception as e:
             print(f"Error processing signal: {e}")
 
@@ -199,7 +201,6 @@ if __name__ == "__main__":
     serialInst.open()
 
     connector = Connector(app)
-
     threading.Thread(target=arduino_read, args=(serialInst, connector), daemon=True).start()
 
     root.mainloop()
